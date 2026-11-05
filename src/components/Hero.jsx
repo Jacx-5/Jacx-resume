@@ -1,162 +1,261 @@
 import { useRef } from 'react'
-import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowDown, ArrowRight, Mail } from 'lucide-react'
-import ParticleField from './ParticleField'
+import { ArrowRight, Mail } from 'lucide-react'
+import { gsap, useGSAP, prefersReducedMotion } from '../lib/gsap'
 import { profile, heroStats } from '../data/resume'
+import Aurora from './reactbits/Aurora/Aurora'
+import BlurText from './reactbits/BlurText/BlurText'
+import RotatingText from './reactbits/RotatingText/RotatingText'
+import ShinyText from './reactbits/ShinyText/ShinyText'
+import CountUp from './reactbits/CountUp/CountUp'
+import Magnet from './reactbits/Magnet/Magnet'
+import TiltedCard from './reactbits/TiltedCard/TiltedCard'
+import CircularText from './reactbits/CircularText/CircularText'
 
-const container = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.13, delayChildren: 0.3 } },
+/** 从字符串推断小数点位数：'3.55'→2，'531'→0，'7.0'→1 */
+const decimalsOf = (v) => {
+  const s = String(v)
+  const i = s.indexOf('.')
+  return i === -1 ? 0 : s.length - i - 1
 }
 
-const fadeUp = {
-  hidden: { opacity: 0, y: 34 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.9, ease: [0.21, 0.47, 0.32, 0.98] } },
-}
+/** 身份卡数据（TiltedCard 面板） */
+const cardData = [
+  { label: 'GPA', value: '3.55' },
+  { label: 'CET-4', value: '531' },
+  { label: 'IELTS', value: '7.0' },
+  { label: '收益率', value: '25%' },
+]
 
 export default function Hero() {
-  const ref = useRef(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
-  const contentY = useTransform(scrollYProgress, [0, 1], [0, 140])
-  const contentOpacity = useTransform(scrollYProgress, [0, 0.75], [1, 0])
+  const sectionRef = useRef(null)
+  const contentRef = useRef(null)
+
+  useGSAP(
+    () => {
+      if (prefersReducedMotion) return
+
+      // 入场时间轴（React Bits 组件各自带动画，这里只处理普通元素）
+      const tl = gsap.timeline({ delay: 0.55 })
+      tl.from('.hero-badge', { y: 20, autoAlpha: 0, duration: 0.6 })
+        .from('.hero-para', { y: 22, autoAlpha: 0, duration: 0.7 }, '-=0.35')
+        .from('.hero-cta', { y: 24, autoAlpha: 0, duration: 0.6, stagger: 0.1 }, '-=0.4')
+        .from('.hero-stat', { y: 26, autoAlpha: 0, duration: 0.6, stagger: 0.08 }, '-=0.3')
+        .from('.hero-card-wrap', { y: 40, autoAlpha: 0, duration: 0.9, ease: 'power4.out' }, '-=0.5')
+        .from('.hero-ring', { autoAlpha: 0, scale: 0.6, duration: 0.8, ease: 'back.out(1.7)' }, '-=0.4')
+
+      // 滚动视差：内容上移淡出
+      gsap.to(contentRef.current, {
+        y: 120,
+        autoAlpha: 0,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: true,
+        },
+      })
+    },
+    { scope: sectionRef }
+  )
 
   return (
-    <section id="home" ref={ref} className="relative flex min-h-screen items-center overflow-hidden">
-      {/* 渐变流体光斑 */}
-      <motion.div
-        className="absolute -left-48 top-[12%] h-[520px] w-[520px] rounded-full bg-cyan-500/[0.13] blur-[140px]"
-        animate={{ x: [0, 70, -20, 0], y: [0, -50, 40, 0], scale: [1, 1.12, 0.94, 1] }}
-        transition={{ duration: 24, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute right-[-10%] top-[30%] h-[560px] w-[560px] rounded-full bg-blue-600/[0.12] blur-[150px]"
-        animate={{ x: [0, -60, 30, 0], y: [0, 60, -30, 0], scale: [1, 0.92, 1.1, 1] }}
-        transition={{ duration: 28, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute bottom-[-20%] left-[30%] h-[480px] w-[480px] rounded-full bg-violet-600/[0.10] blur-[150px]"
-        animate={{ x: [0, 40, -40, 0], y: [0, -30, 20, 0] }}
-        transition={{ duration: 32, repeat: Infinity, ease: 'easeInOut' }}
-      />
+    <section
+      id="home"
+      ref={sectionRef}
+      className="relative flex min-h-[100dvh] items-center overflow-hidden"
+    >
+      {/* 蓝极光背景（跟随鼠标漂移） */}
+      <div className="absolute inset-0">
+        <Aurora
+          colorStops={['#1e3a8a', '#3f86ff', '#6fa8ff']}
+          brightness={0.55}
+          height={0.42}
+          blend={0.5}
+          glow={0.45}
+          layers={2}
+          speed={0.7}
+          amplitude={1}
+          opacity={0.9}
+          className="!absolute inset-0"
+        />
+      </div>
+      {/* 细网格 + 上下渐晕 */}
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:72px_72px] [mask-image:radial-gradient(ellipse_70%_60%_at_50%_35%,black_10%,transparent_75%)]" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-ink-950 to-transparent" />
 
-      {/* 科技网格（径向渐隐） */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(148,163,184,0.045)_1px,transparent_1px),linear-gradient(to_bottom,rgba(148,163,184,0.045)_1px,transparent_1px)] bg-[size:76px_76px] [mask-image:radial-gradient(ellipse_75%_65%_at_50%_38%,black_15%,transparent_78%)]" />
-
-      {/* 高斯模糊暗色遮罩 */}
-      <div className="absolute inset-0 bg-ink-950/60 backdrop-blur-[2px]" />
-
-      {/* 粒子网络 */}
-      <ParticleField className="absolute inset-0" />
-
-      {/* 主内容 */}
-      <motion.div
-        style={{ y: contentY, opacity: contentOpacity }}
-        className="relative z-10 mx-auto w-full max-w-[1700px] px-6 pb-44 pt-32 md:px-12 lg:px-20"
+      {/* 主内容（滚动视差目标） */}
+      <div
+        ref={contentRef}
+        className="relative z-10 mx-auto w-full max-w-[1700px] px-6 pb-24 pt-36 will-change-transform md:px-12 lg:px-20"
       >
-        <motion.div
-          variants={container}
-          initial="hidden"
-          animate="show"
-          className="mx-auto flex max-w-5xl flex-col items-center text-center"
-        >
-          {/* 身份徽章 */}
-          <motion.div
-            variants={fadeUp}
-            className="flex items-center gap-3 rounded-full border border-white/[0.08] bg-white/[0.03] px-5 py-2 backdrop-blur-md"
-          >
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cyan-400 opacity-60" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
-            </span>
-            <span className="text-xs tracking-[0.25em] text-zinc-400">
-              {profile.school} · {profile.major} · 本科在读
-            </span>
-          </motion.div>
+        <div className="grid items-center gap-16 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
+          {/* 左：文字 */}
+          <div className="max-w-2xl">
+            <div className="hero-badge">
+              <ShinyText
+                text={`${profile.college} · ${profile.major} · 大二在读`}
+                disabled={false}
+                speed={3}
+                className="rounded-full border border-white/[0.08] bg-ink-900/60 px-5 py-2 font-mono text-xs tracking-[0.25em] text-zinc-400 backdrop-blur-md"
+              />
+            </div>
 
-          {/* 英文眉题 */}
-          <motion.p
-            variants={fadeUp}
-            className="mt-10 text-xs font-medium tracking-[0.5em] text-zinc-600 md:text-sm"
-          >
-            CAO JINXIANG — PERSONAL PORTFOLIO
-          </motion.p>
+            <h1 className="mt-9">
+              <BlurText
+                text="曹锦翔"
+                delay={300}
+                animateBy="words"
+                direction="top"
+                blur={14}
+                distance={40}
+                stepDuration={0.35}
+                trigger="load"
+                className="text-8xl font-bold leading-none tracking-tight text-zinc-50 md:text-9xl xl:text-[10.5rem]"
+              />
+            </h1>
 
-          {/* 大标题 */}
-          <motion.h1
-            variants={fadeUp}
-            className="mt-5 text-7xl font-semibold leading-none tracking-tight text-zinc-100 md:text-8xl xl:text-9xl"
-          >
-            曹<span className="text-gradient">锦</span>翔
-          </motion.h1>
+            {/* 角色轮换 */}
+            <div className="mt-8 flex items-baseline gap-4">
+              <span className="shrink-0 font-mono text-[10px] tracking-[0.35em] text-zinc-600">
+                FOCUS
+              </span>
+              <RotatingText
+                texts={['经济与金融', '数据分析与投资研究', '英语表达与教学']}
+                rotationInterval={2600}
+                splitBy="words"
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                mainClassName="text-2xl font-semibold text-blue-400 md:text-3xl"
+              />
+            </div>
 
-          {/* 副标题 */}
-          <motion.p
-            variants={fadeUp}
-            className="mt-9 max-w-2xl text-base leading-relaxed text-zinc-400 md:text-lg"
-          >
-            金融的理性 × 英语的表达力 × 市场的实战 ——
-            <br className="hidden md:block" />
-            目标导向、逻辑严谨、结果驱动，把每一件事做出可衡量的结果。
-          </motion.p>
+            <p className="hero-para mt-7 max-w-xl text-base leading-relaxed text-zinc-400 md:text-lg">
+              目标导向、逻辑严谨、结果驱动。用金融的理性与英语的表达力，把每一段经历做成可衡量的结果。
+            </p>
 
-          {/* CTA 按钮 */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-12 flex flex-wrap items-center justify-center gap-5"
-          >
-            <a
-              href="#projects"
-              className="group inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-8 py-3.5 text-base font-medium text-ink-950 shadow-[0_0_36px_rgba(34,211,238,0.28)] transition-all duration-300 hover:shadow-[0_0_56px_rgba(34,211,238,0.45)] hover:brightness-110"
-            >
-              查看我的经历
-              <ArrowRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-1" />
-            </a>
-            <a
-              href="#contact"
-              className="inline-flex items-center gap-3 rounded-full border border-white/[0.12] bg-white/[0.03] px-8 py-3.5 text-base text-zinc-200 backdrop-blur-md transition-all duration-300 hover:border-cyan-400/40 hover:text-cyan-200"
-            >
-              <Mail className="h-4.5 w-4.5" />
-              联系我
-            </a>
-          </motion.div>
+            {/* CTA（磁吸） */}
+            <div className="mt-11 flex flex-wrap items-center gap-5">
+              <Magnet padding={80} magnetStrength={2.6}>
+                <a
+                  href="#projects"
+                  className="hero-cta group inline-flex items-center gap-3 rounded-full bg-blue-400 px-8 py-3.5 text-base font-medium text-ink-950 transition-shadow duration-300 hover:shadow-[0_0_44px_rgba(111,168,255,0.45)]"
+                >
+                  查看我的经历
+                  <ArrowRight className="h-4.5 w-4.5 transition-transform duration-300 group-hover:translate-x-1" />
+                </a>
+              </Magnet>
+              <Magnet padding={80} magnetStrength={2.2}>
+                <a
+                  href="#contact"
+                  className="hero-cta inline-flex items-center gap-3 rounded-full border border-white/[0.12] bg-ink-900/50 px-8 py-3.5 text-base text-zinc-200 backdrop-blur-md transition-colors duration-300 hover:border-blue-400/50 hover:text-blue-300"
+                >
+                  <Mail className="h-4.5 w-4.5" />
+                  联系我
+                </a>
+              </Magnet>
+            </div>
 
-          {/* 数据条 */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-20 grid w-full max-w-4xl grid-cols-2 gap-y-8 rounded-3xl border border-white/[0.06] bg-white/[0.02] px-4 py-8 backdrop-blur-xl md:grid-cols-4 md:divide-x md:divide-white/[0.06]"
-          >
-            {heroStats.map((s) => (
-              <div key={s.label} className="px-4 text-center">
-                <div className="text-3xl font-semibold tracking-tight text-zinc-50 md:text-4xl">
-                  {s.value}
-                  <span className="text-cyan-400">{s.unit}</span>
+            {/* 数据条（React Bits CountUp，等宽数字） */}
+            <div className="mt-16 grid grid-cols-2 gap-y-8 border-t border-white/[0.08] pt-8 md:grid-cols-4">
+              {heroStats.map((s) => (
+                <div key={s.label} className="hero-stat">
+                  <CountUp
+                    to={parseFloat(s.value)}
+                    decimals={decimalsOf(s.value)}
+                    suffix={s.unit}
+                    duration={2.2}
+                    className="font-mono text-3xl font-medium text-zinc-50 md:text-4xl"
+                  />
+                  <div className="mt-2 font-mono text-[10px] tracking-[0.25em] text-zinc-600">
+                    {s.label}
+                  </div>
                 </div>
-                <div className="mt-2 text-[11px] uppercase tracking-[0.25em] text-zinc-500">
-                  {s.label}
+              ))}
+            </div>
+          </div>
+
+          {/* 右：3D 身份卡（跟随鼠标倾斜） */}
+          <div className="hero-card-wrap relative">
+            <div className="hero-ring absolute -top-12 right-6 z-20 hidden lg:block">
+              <CircularText
+                text="OPEN TO INTERNSHIPS · DRIVEN BY RESULTS · "
+                spinDuration={18}
+                onHover="speedUp"
+                size={132}
+                fontSize={12}
+                fontWeight={700}
+                color="#6fa8ff"
+              />
+            </div>
+
+            <TiltedCard
+              radius={16}
+              rotateAmplitude={10}
+              scaleOnHover={1.02}
+              glare={0.35}
+              glareColor="#6fa8ff"
+              shadow={0.45}
+              parallax={0}
+              floating={false}
+              gyroscope={false}
+              showTooltip={false}
+              containerHeight="clamp(460px, 40vw, 580px)"
+              containerWidth="100%"
+              imageHeight="100%"
+              imageWidth="100%"
+              className="w-full"
+            >
+              <div className="absolute inset-0 flex flex-col justify-between bg-ink-900 p-8 md:p-10">
+                {/* 顶栏 */}
+                <div className="flex items-center justify-between font-mono text-[10px] tracking-[0.3em] text-zinc-500">
+                  <span>PORTFOLIO / 2026</span>
+                  <span className="text-blue-400">R 25.0%</span>
                 </div>
+
+                {/* 主字标 */}
+                <div>
+                  <div className="text-[7.5rem] font-bold leading-none tracking-tight text-blue-400 md:text-[9.5rem]">
+                    锦
+                  </div>
+                  <div className="mt-3 font-mono text-[11px] tracking-[0.45em] text-zinc-500">
+                    JACX
+                  </div>
+                </div>
+
+                {/* 数据格 */}
+                <div>
+                  <div className="grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.07]">
+                    {cardData.map((d) => (
+                      <div key={d.label} className="bg-ink-950/90 px-5 py-4">
+                        <div className="font-mono text-[9px] tracking-[0.3em] text-zinc-600">
+                          {d.label}
+                        </div>
+                        <div className="mt-1.5 font-mono text-xl font-medium text-zinc-50">
+                          {d.value}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {/* 条码装饰 */}
+                  <div
+                    className="mt-5 h-7 opacity-30"
+                    style={{
+                      background:
+                        'repeating-linear-gradient(90deg, rgba(168,205,255,0.7) 0 2px, transparent 2px 5px, rgba(168,205,255,0.35) 5px 8px, transparent 8px 12px)',
+                    }}
+                  />
+                </div>
+
+                {/* 四角括号 */}
+                <span className="pointer-events-none absolute left-3 top-3 h-5 w-5 border-l-2 border-t-2 border-blue-400/50" />
+                <span className="pointer-events-none absolute right-3 top-3 h-5 w-5 border-r-2 border-t-2 border-blue-400/50" />
+                <span className="pointer-events-none absolute bottom-3 left-3 h-5 w-5 border-b-2 border-l-2 border-blue-400/50" />
+                <span className="pointer-events-none absolute bottom-3 right-3 h-5 w-5 border-b-2 border-r-2 border-blue-400/50" />
               </div>
-            ))}
-          </motion.div>
-        </motion.div>
-      </motion.div>
-
-      {/* 滚动提示 */}
-      <motion.a
-        href="#about"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.8, duration: 1 }}
-        className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2"
-      >
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-          className="flex flex-col items-center gap-2 text-zinc-600 transition-colors duration-300 hover:text-cyan-300"
-        >
-          <span className="text-[10px] tracking-[0.4em]">SCROLL</span>
-          <ArrowDown className="h-4 w-4" />
-        </motion.div>
-      </motion.a>
+            </TiltedCard>
+          </div>
+        </div>
+      </div>
     </section>
   )
 }
